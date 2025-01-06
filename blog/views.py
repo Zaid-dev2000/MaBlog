@@ -4,11 +4,12 @@ from rest_framework.exceptions import PermissionDenied
 from rest_framework.pagination import PageNumberPagination
 from django_filters.rest_framework import DjangoFilterBackend
 from .models import BlogPost, Category, Comment
-from .serializers import BlogPostSerializer, CategorySerializer, CommentSerializer
+from .serializers import BlogPostSerializer, CategorySerializer, CommentSerializer, LoginSerializer, RegisterSerializer
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate, login, logout
 from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny
+from rest_framework.renderers import BrowsableAPIRenderer, JSONRenderer
 from rest_framework.authtoken.models import Token
 
 
@@ -98,48 +99,53 @@ class CommentDetailView(generics.RetrieveUpdateDestroyAPIView):
             raise PermissionDenied("You can only edit your own comments.")
         serializer.save()
 
+
 class RegisterView(APIView):
-    """
-    View to register a new user.
-    """
     permission_classes = [AllowAny]
+    serializer_class = RegisterSerializer
+    renderer_classes = [BrowsableAPIRenderer, JSONRenderer]
 
     def post(self, request):
-        username = request.data.get('username')
-        email = request.data.get('email')
-        password = request.data.get('password')
-        confirm_password = request.data.get('confirm_password')
+        serializer = self.serializer_class(data=request.data)
+        if serializer.is_valid():
+            username = serializer.validated_data['username']
+            email = serializer.validated_data['email']
+            password = serializer.validated_data['password']
+            confirm_password = serializer.validated_data['confirm_password']
 
-        if not username or not email or not password:
-            return Response({'error': 'All fields are required.'}, status=status.HTTP_400_BAD_REQUEST)
+            if password != confirm_password:
+                return Response({'error': 'Passwords do not match.'}, status=status.HTTP_400_BAD_REQUEST)
 
-        if password != confirm_password:
-            return Response({'error': 'Passwords do not match.'}, status=status.HTTP_400_BAD_REQUEST)
+            if User.objects.filter(username=username).exists():
+                return Response({'error': 'Username already exists.'}, status=status.HTTP_400_BAD_REQUEST)
 
-        if User.objects.filter(username=username).exists():
-            return Response({'error': 'Username is already taken.'}, status=status.HTTP_400_BAD_REQUEST)
+            user = User.objects.create_user(username=username, email=email, password=password)
+            token, _ = Token.objects.get_or_create(user=user)
+            return Response({'message': 'User registered successfully.', 'token': token.key}, status=status.HTTP_201_CREATED)
 
-        user = User.objects.create_user(username=username, email=email, password=password)
-        token, _ = Token.objects.get_or_create(user=user)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        return Response({'message': 'User registered successfully.', 'token': token.key}, status=status.HTTP_201_CREATED)
 
 
 class LoginView(APIView):
-    """
-    View to log in a user and generate an authentication token.
-    """
     permission_classes = [AllowAny]
+    serializer_class = LoginSerializer
+    renderer_classes = [BrowsableAPIRenderer, JSONRenderer]  # Important for form fields to show
 
     def post(self, request):
-        username = request.data.get('username')
-        password = request.data.get('password')
+        serializer = self.serializer_class(data=request.data)
+        if serializer.is_valid():
+            username = serializer.validated_data['username']
+            password = serializer.validated_data['password']
 
-        user = authenticate(username=username, password=password)
-        if user:
-            token, _ = Token.objects.get_or_create(user=user)
-            return Response({'message': 'Login successful.', 'token': token.key}, status=status.HTTP_200_OK)
-        return Response({'error': 'Invalid credentials.'}, status=status.HTTP_401_UNAUTHORIZED)
+            user = authenticate(username=username, password=password)
+            if user:
+                token, _ = Token.objects.get_or_create(user=user)
+                return Response({'message': 'Login successful.', 'token': token.key}, status=status.HTTP_200_OK)
+            return Response({'error': 'Invalid credentials.'}, status=status.HTTP_401_UNAUTHORIZED)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 
 class LogoutView(APIView):
