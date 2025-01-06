@@ -4,13 +4,16 @@ from rest_framework.exceptions import PermissionDenied
 from rest_framework.pagination import PageNumberPagination
 from django_filters.rest_framework import DjangoFilterBackend
 from .models import BlogPost, Category, Comment
-from .serializers import BlogPostSerializer, CategorySerializer, CommentSerializer, LoginSerializer, RegisterSerializer
+from .serializers import BlogPostSerializer, CategorySerializer, CommentSerializer, LoginSerializer, RegisterSerializer, LogoutSerializer
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate, login, logout
 from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny
 from rest_framework.renderers import BrowsableAPIRenderer, JSONRenderer
 from rest_framework.authtoken.models import Token
+from django.shortcuts import redirect
+from django.urls import reverse
+
 
 
 # Pagination Setup
@@ -118,10 +121,17 @@ class RegisterView(APIView):
 
             if User.objects.filter(username=username).exists():
                 return Response({'error': 'Username already exists.'}, status=status.HTTP_400_BAD_REQUEST)
-
+            
+            # Create user and redirect to login page
             user = User.objects.create_user(username=username, email=email, password=password)
             token, _ = Token.objects.get_or_create(user=user)
-            return Response({'message': 'User registered successfully.', 'token': token.key}, status=status.HTTP_201_CREATED)
+
+            # Redirect only if it's the Browsable API (HTML)
+            if request.accepted_renderer.format == 'html':
+                return redirect(reverse('blog:login'))  # Redirect to the login page
+            
+            # If it's an API request (JSON response)
+            return Response({'message': 'User registered successfully. Please log in', 'token': token.key}, status=status.HTTP_201_CREATED)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -140,7 +150,12 @@ class LoginView(APIView):
 
             user = authenticate(username=username, password=password)
             if user:
+                # Token Authentication (for APIs)
                 token, _ = Token.objects.get_or_create(user=user)
+
+                 # Session Authentication (for Browsable API)
+                login(request, user)  # Logs the user into the session
+
                 return Response({'message': 'Login successful.', 'token': token.key}, status=status.HTTP_200_OK)
             return Response({'error': 'Invalid credentials.'}, status=status.HTTP_401_UNAUTHORIZED)
 
@@ -152,9 +167,22 @@ class LogoutView(APIView):
     """
     View to log out a user by deleting their authentication token.
     """
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = LogoutSerializer
+    renderer_classes = [BrowsableAPIRenderer, JSONRenderer]
+
     def post(self, request):
-        try:
-            request.user.auth_token.delete()
-            return Response({'message': 'Logout successful.'}, status=status.HTTP_200_OK)
-        except AttributeError:
-            return Response({'error': 'You are not logged in.'}, status=status.HTTP_400_BAD_REQUEST)
+        serializer = self.serializer_class(data=request.data)
+        if serializer.is_valid():
+            try:
+                 # Clear token-based authentication
+                request.user.auth_token.delete()
+
+                # Clear session-based authentication for the browsable API
+                logout(request)
+                
+                return Response({'message': 'Logout successful.'}, status=status.HTTP_200_OK)
+            except AttributeError:
+                return Response({'error': 'You are not logged in.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
