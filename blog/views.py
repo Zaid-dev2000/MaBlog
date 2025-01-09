@@ -4,7 +4,7 @@ from rest_framework.exceptions import PermissionDenied
 from rest_framework.pagination import PageNumberPagination
 from django_filters.rest_framework import DjangoFilterBackend
 from .models import BlogPost, Category, Comment
-from .serializers import BlogPostSerializer, CategorySerializer, CommentSerializer, LoginSerializer, RegisterSerializer, LogoutSerializer
+from .serializers import BlogPostSerializer, CategorySerializer, CommentSerializer, LoginSerializer, RegisterSerializer, LogoutSerializer, DeleteBlogPostSerializer
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate, login, logout
 from rest_framework.views import APIView
@@ -13,6 +13,7 @@ from rest_framework.renderers import BrowsableAPIRenderer, JSONRenderer
 from rest_framework.authtoken.models import Token
 from django.shortcuts import redirect
 from django.urls import reverse
+from django.http import HttpResponseRedirect
 
 
 
@@ -45,11 +46,25 @@ class BlogPostDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = BlogPost.objects.all()
     serializer_class = BlogPostSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    lookup_field = 'slug'  # ✅ This line ensures it works with slugs
 
     def perform_update(self, serializer):
         if serializer.instance.author != self.request.user:
             raise PermissionDenied("You can only edit your own posts.")
         serializer.save()
+
+    def delete(self, request, *args, **kwargs):
+        """
+        Override DELETE to show a confirmation form for the browsable API.
+        """
+        serializer = DeleteBlogPostSerializer(data=request.data)
+        if serializer.is_valid() and serializer.validated_data['confirm_delete']:
+            self.perform_destroy(self.get_object())
+            # ✅ Redirect back to the blog posts list after deletion in the HTML view
+            if request.accepted_renderer.format == 'html':
+                return HttpResponseRedirect(reverse('blog:post-list-create'))
+            return Response({'message': 'Blog post deleted successfully.'}, status=status.HTTP_204_NO_CONTENT)
+        return Response({'error': 'Please confirm deletion.'}, status=status.HTTP_400_BAD_REQUEST)    
 
 
 # Category Views
@@ -101,7 +116,7 @@ class CommentDetailView(generics.RetrieveUpdateDestroyAPIView):
         if serializer.instance.author != self.request.user:
             raise PermissionDenied("You can only edit your own comments.")
         serializer.save()
-        
+
     def perform_destroy(self, instance):
         # Ensure only the author can delete the comment
         if instance.author != self.request.user:

@@ -78,6 +78,10 @@ class BlogPostSerializer(serializers.ModelSerializer):
             post.category = category
             post.save()
         return post
+    
+class DeleteBlogPostSerializer(serializers.Serializer):
+    confirm_delete = serializers.BooleanField(default=False, help_text="Check to confirm deletion.")
+
 
 class LoginSerializer(serializers.Serializer):
     username = serializers.CharField(max_length=150)
