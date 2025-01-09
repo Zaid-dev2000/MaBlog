@@ -1,1 +1,1 @@
-web: gunicorn mablog.wsgi
+web: gunicorn blogging_platform.wsgi
