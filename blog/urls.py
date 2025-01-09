@@ -8,6 +8,13 @@ from .views import (
     CommentDetailView,
     RegisterView, LoginView, LogoutView
 )
+from django.http import HttpResponse
+
+
+
+def home(request):
+    return HttpResponse("Welcome to Mablog!")
+
 
 app_name = 'blog'  # Set this to match the namespace in your project-level urls.py
 
@@ -21,4 +28,5 @@ urlpatterns = [
     path('register/', RegisterView.as_view(), name='register'),
     path('login/', LoginView.as_view(), name='login'),
     path('logout/', LogoutView.as_view(), name='logout'),
+    path('', home),  # Make sure you have this for the root URL
 ]
