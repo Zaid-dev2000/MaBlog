@@ -101,6 +101,12 @@ class CommentDetailView(generics.RetrieveUpdateDestroyAPIView):
         if serializer.instance.author != self.request.user:
             raise PermissionDenied("You can only edit your own comments.")
         serializer.save()
+        
+    def perform_destroy(self, instance):
+        # Ensure only the author can delete the comment
+        if instance.author != self.request.user:
+            raise PermissionDenied("You can only delete your own comments.")
+        instance.delete()
 
 
 class RegisterView(APIView):
