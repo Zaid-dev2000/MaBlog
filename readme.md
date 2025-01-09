@@ -1,25 +1,33 @@
 # MaBlog
 
-MaBlog is a blogging platform API designed to provide a seamless experience for managing blog posts and user profiles. Built using Django and Django REST Framework (DRF), this project serves as the capstone for the Backend Web Development program in ALX Academy.
+MaBlog is a feature-rich blogging platform API built using Django and Django REST Framework (DRF). It allows users to create, manage, and interact with blog posts and comments while ensuring secure user authentication and authorization. This project is the capstone submission for the ALX Backend Web Development program.
 
 ---
 
 ## Features
 
-### Core Functionality
-- **CRUD Operations:**
-  - Users: Create, read, update, and delete user profiles.
-  - Blog Posts: Create, read, update, and delete blog posts.
-- **Categorized Views:**
-  - View blog posts grouped by category.
-- **Author-Specific Views:**
-  - Fetch blog posts authored by a specific user.
-- **Authentication and Authorization:**
-  - Secure endpoints with user authentication.
-  - Restrict actions like editing and deleting posts to their respective authors.
+### User Management
 
-### Deployment
-- Hosted on **Heroku** or **PythonAnywhere**.
+- **User Registration:** Users can register by providing a username, email, and password with validation checks for password confirmation and username uniqueness.
+- **Login & Logout:** Secure login using username and password. The platform supports both token-based and session-based authentication.
+- **Authorization:** Token and session management ensure secure access to restricted endpoints.
+
+### Blog Post Management
+
+- **CRUD Operations:** Users can create, view, update, and delete blog posts.
+- **Post Categories:** Each blog post can be associated with a category for better organization.
+- **Like Feature:** Users can like blog posts.
+- **Post Status Management:** Blog posts can be marked as either `draft` or `published`.
+
+### Commenting System
+
+- **CRUD Operations:** Users can add, update, and delete comments on blog posts.
+- **Comment Ownership:** Only comment authors can edit or delete their comments.
+
+### Security
+
+- **Authentication:** The platform uses both token-based and session-based authentication.
+- **Authorization:** Only authors can modify or delete their own posts and comments.
 
 ---
 
@@ -28,54 +36,75 @@ MaBlog is a blogging platform API designed to provide a seamless experience for 
 ```
 Mablog/
 ├── blog/                      # Main blogging app
-│   ├── admin.py               # Admin configurations
-│   ├── apps.py                # App configuration
-│   ├── migrations/            # Database migrations
-│   ├── models.py              # Database models
-│   ├── serializers.py         # Data serialization/deserialization
-│   ├── tests.py               # Unit tests
-│   ├── urls.py                # App-specific routes
-│   ├── views.py               # Business logic and request handling
-│   └── __init__.py            # Module initialization
-├── blogging_platform/         # Project configuration
-│   ├── asgi.py                # ASGI configuration
-│   ├── settings.py            # Project settings
-│   ├── urls.py                # Project-wide routes
-│   ├── wsgi.py                # WSGI configuration
-│   └── __init__.py            # Module initialization
-├── db.sqlite3                 # SQLite database (for development)
-├── manage.py                  # Django management script
+│   ├── models.py              # Data models (BlogPost, Category, Comment)
+│   ├── serializers.py         # Data serialization
+│   ├── views.py               # API endpoints and business logic
+│   ├── urls.py                # App-level routing
+│   └── tests.py               # Unit tests
+├── blogging_platform/         # Project-level settings and configurations
+│   ├── settings.py            # Project configurations
+│   └── urls.py                # Project-wide URL management
+├── db.sqlite3                 # SQLite development database
+├── manage.py                  # Django CLI for project management
+├── requirements.txt           # Project dependencies
 ├── README.md                  # Project documentation
-└── venv/                      # Virtual environment
+└── venv/                      # Python virtual environment
 ```
+
+---
+
+## API Endpoints
+
+### User Endpoints:
+
+- **Register:** `POST /register/`
+- **Login:** `POST /login/`
+- **Logout:** `POST /logout/`
+
+### Blog Post Endpoints:
+
+- **List & Create Posts:** `GET, POST /posts/`
+- **Retrieve, Update, Delete Post:** `GET, PUT, DELETE /posts/<id>/`
+- **Posts by Category:** `GET /posts/category/<category_id>/`
+- **Posts by Author:** `GET /posts/author/<author_id>/`
+
+### Comment Endpoints:
+
+- **List & Create Comments:** `GET, POST /posts/<post_id>/comments/`
+- **Retrieve, Update, Delete Comment:** `GET, PUT, DELETE /comments/<id>/`
 
 ---
 
 ## Setup and Installation
 
 1. **Clone the Repository:**
+
    ```bash
    git clone https://github.com/Zaid-dev2000/mablog.git
    cd mablog
    ```
 
 2. **Create and Activate Virtual Environment:**
+
    ```bash
    python -m venv venv
    source venv/bin/activate   # On Windows: venv\Scripts\activate
    ```
 
 3. **Install Dependencies:**
+
    ```bash
    pip install -r requirements.txt
    ```
 
-4. **Apply Migrations:**
+4. **Apply Database Migrations:**
+
    ```bash
    python manage.py migrate
    ```
 
 5. **Run the Development Server:**
+
    ```bash
    python manage.py runserver
    ```
@@ -85,46 +114,26 @@ Mablog/
 
 ---
 
-## API Endpoints
-
-| Endpoint                  | HTTP Method | Description                          |
-|---------------------------|-------------|--------------------------------------|
-| `/users/`                 | POST        | Register a new user                 |
-| `/users/<id>/`            | GET         | Retrieve user details               |
-| `/users/<id>/`            | PUT         | Update user details                 |
-| `/users/<id>/`            | DELETE      | Delete a user                       |
-| `/posts/`                 | GET         | Retrieve all blog posts             |
-| `/posts/`                 | POST        | Create a new blog post              |
-| `/posts/<id>/`            | GET         | Retrieve a specific blog post       |
-| `/posts/<id>/`            | PUT         | Update a specific blog post         |
-| `/posts/<id>/`            | DELETE      | Delete a specific blog post         |
-| `/posts/category/<category>/` | GET     | Retrieve blog posts by category     |
-| `/posts/author/<author_id>/`  | GET     | Retrieve blog posts by author       |
-
----
-
-## Deployment
-
-This project is configured for deployment on platforms like **Heroku** and **PythonAnywhere**. Make sure to:
-- Set environment variables for sensitive data like database credentials and secret keys.
-- Use PostgreSQL for production.
+##
 
 ---
 
 ## Contributing
 
-Contributions are welcome! Please open an issue or submit a pull request on the [GitHub repository](https://github.com/Zaid-dev2000/mablog).
+Contributions are welcome! Feel free to open issues or submit pull requests on the [GitHub repository](https://github.com/Zaid-dev2000/mablog).
 
 ---
 
 ## License
 
-This project is licensed under the MIT License. See the LICENSE file for details.
+This project is licensed under the MIT License.
 
 ---
 
 ## Contact
 
-For questions or feedback, please contact:
-- **Name:** Zaid-dev2000
 - **GitHub:** [Zaid-dev2000](https://github.com/Zaid-dev2000)
+- **Email:** [elouakhchachizaid\@gmail.com]
+
+---
+
