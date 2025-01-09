@@ -17,12 +17,7 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 
-
-
-
-
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include('blog.urls', namespace='blog')),  # Replace 'blog' with your app name
-    path('', include('blogging_platform.urls')),  # Ensure the app URLs are included here
 ]
